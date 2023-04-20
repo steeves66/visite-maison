@@ -28,31 +28,63 @@ api.register_controllers(MathAPI)
 
 
 
-from ninja import ModelSchema
+from ninja import ModelSchema, Schema
 from django.contrib.auth import get_user_model
 from ninja_extra import http_post, http_delete, http_generic, route, permissions, status, http_delete, pagination
 from ninja.security import APIKeyQuery
 import typing
 from .models import CustomUser as User
 from ninja_extra.controllers.response import Detail
+from pydantic import BaseModel, ValidationError, validator
 
-class UserSchemaIn(ModelSchema):
-    class Config:
-        model = get_user_model()
-        model_fields = ['username', 'email', 'first_name', 'last_name', 'cel', 'whatsup', 'password']
+# class UserSchemaIn(ModelSchema):
+#     class Config:
+#         model = get_user_model()
+#         model_fields = ['username', 'email', 'first_name', 'last_name', 'cel', 'whatsup', 'password']
+
+
+class UserSchemaIn(Schema):
+    username: str
+    email: str
+    first_name: str
+    last_name: str
+    cel: str
+    whatsup: str
+    password1: str
+    password2: str
+
+    @validator('name')
+    def name_must_contain_space(cls, v):
+        if ' ' not in v:
+            raise ValueError('must contain a space')
+        return v.title()
+
+    @validator('password2')
+    def passwords_match(cls, v, values, **kwargs):
+        if 'password1' in values and v != values['password1']:
+            raise ValueError('passwords do not match')
+        return v
+
 
 class UserSchema(ModelSchema):
     class Config:
         model = get_user_model()
-        model_fields = ['username', 'email', 'first_name']
+        model_fields = ['username', 'email', 'first_name', 'cel', 'email', 'last_name', 'whatsup']
+        
+        
+
+@api.get("/add-users", tags=['Another_Users'], response=UserSchema)
+def add(request, payload: UserSchemaIn):
+    return {payload}
+
 
 
 @api_controller('/users')
 class UsersAPIController(ControllerBase):
     user_model = get_user_model()
 
-    @http_post()
-    def create_user(self, payload: UserSchema):
+    @http_post(response=UserSchema)
+    def create_user(self, payload: UserSchemaIn):
         new_user = User.objects.create(
             username=payload.username,
             email=payload.email,
@@ -65,12 +97,18 @@ class UsersAPIController(ControllerBase):
         new_user.save()
         return new_user
     
-    @http_generic('/{int:user_id}', methods=['put', 'patch'], response=UserSchema)
-    def update_user(self, user_id: int):
+    @http_generic('/{int:user_id}/update', methods=['put', 'patch'], response=UserSchema)
+    def update_user(self, user_id: int, payload: UserSchema):
         user = self.get_object_or_exception(self.user_model, id=user_id)
+        user.username=payload.username
+        user.first_name=payload.first_name
+        user.last_name=payload.last_name
+        user.cel=payload.cel
+        user.whatsup=payload.whatsup
+        user.save()
         return user
     
-    @http_delete('/{int:user_id}', response=Detail(status_code=status.HTTP_204_NO_CONTENT))
+    @http_delete('/{int:user_id}/delete', response=Detail(status_code=status.HTTP_204_NO_CONTENT))
     def delete_user(self, user_id:int):
         user = self.get_object_or_exception(self.user_model, id=user_id)
         user.delete()
