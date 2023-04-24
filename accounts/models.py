@@ -39,7 +39,7 @@ class AccountManager(BaseUserManager):
       user.save(using=self._db)
       return user
 
-
+ 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email       = models.EmailField(_('email address'), max_length=60, unique=True)
