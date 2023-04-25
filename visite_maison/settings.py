@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     "ninja",
     "ninja_extra",
     "ninja_jwt",
-]
+    "ninja_jwt.token_blacklist",
+    ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -132,11 +133,10 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
-# Django project settings.py
+# Django ninja-jwt project settings.py
 
 from datetime import timedelta
 from django.conf import settings
-...
 
 NINJA_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),

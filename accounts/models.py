@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Permission
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 
@@ -39,16 +39,16 @@ class AccountManager(BaseUserManager):
       user.save(using=self._db)
       return user
 
-
+ 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email       = models.EmailField(_('email address'), max_length=60, unique=True)
-    username    = models.CharField(max_length=60, unique=True)
-    first_name  = models.CharField(max_length=60, blank=True)
-    last_name   = models.CharField(max_length=60, blank=True)
+    username    = models.CharField(max_length=60, unique=True, unique=True)
+    first_name  = models.CharField(max_length=60, blank=True, null=True)
+    last_name   = models.CharField(max_length=60, blank=True, null=True)
     cel         = models.CharField(max_length=60, unique=True, blank=True)
-    tel         = models.CharField(max_length=60, blank=True)
-    whatsup     = models.CharField(max_length=60, unique=True, blank=True)
+    tel         = models.CharField(max_length=60, blank=True, null=True)
+    whatsup     = models.CharField(max_length=60, unique=True, blank=True, null=True)
     date_joined = models.DateTimeField(auto_now_add=True)
     date_update = models.DateTimeField(auto_now=True)
     last_login  = models.DateTimeField(auto_now=True)
