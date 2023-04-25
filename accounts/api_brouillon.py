@@ -244,14 +244,17 @@ class LogoutView(APIView):
 
 
  """
+ 
+ # *********************************************************** *********************
+ 
+ from ninja_extra import NinjaExtraAPI, api_controller, http_get, ControllerBase
 
-
-
-
- -**********************************
-
-from ninja_extra import NinjaExtraAPI, api_controller, http_get, ControllerBase
-
+from ninja import router
+from ninja_jwt.authentication import JWTAuth
+from ninja_jwt.tokens import RefreshToken
+from ninja_jwt.authentication import JWTBaseAuthentication
+from ninja_jwt.exceptions import TokenBackendError, TokenError
+from ninja_jwt.token_blacklist.models import OutstandingToken
 api = NinjaExtraAPI()
 
 @api.get("/add")
@@ -287,6 +290,7 @@ from ninja.security import APIKeyQuery
 import typing
 from .models import CustomUser as User
 from ninja_extra.controllers.response import Detail
+from pydantic import BaseModel, ValidationError, validator
 
 # class UserSchemaIn(ModelSchema):
 #     class Config:
@@ -294,7 +298,7 @@ from ninja_extra.controllers.response import Detail
 #         model_fields = ['username', 'email', 'first_name', 'last_name', 'cel', 'whatsup', 'password']
 
 
-""" class UserSchemaIn(Schema):
+class UserSchemaIn(Schema):
     username: str
     email: str
     first_name: str
@@ -314,7 +318,7 @@ from ninja_extra.controllers.response import Detail
     def passwords_match(cls, v, values, **kwargs):
         if 'password1' in values and v != values['password1']:
             raise ValueError('passwords do not match')
-        return v """
+        return v
 
 
 class UserSchema(ModelSchema):
@@ -328,7 +332,20 @@ class UserSchema(ModelSchema):
 def add(request, payload: UserSchemaIn):
     return {payload}
 
+@api.post('/logout', auth=JWTAuth())
+def logout(request):
+    try:
+        token = RefreshToken(request.headers.get('refresh'))
+    except TokenBackendError:
+        raise TokenError(_("Token is invalid or expired"))
+    token.blacklist()
+    return {"access_token": str(token)}
 
+@api.get('/get_token')
+def get_token(request):
+    pass
+    # print(request.user.last_name)
+    #print(request.data)
 
 @api_controller('/users')
 class UsersAPIController(ControllerBase):
@@ -411,61 +428,3 @@ class UsersAPI(ControllerBase):
         return new_user
  """
 api.register_controllers(UsersAPIController)
-
-
-
-from ninja_extra import permissions, api_controller, http_get
-
-class CustomPermission(BasePermission):
-    def has_permission(self, request, view):
-        return request.user.has_perm('myapp.view_mymodel')
-    
-    
-    
-    
-
-
-
-@api.get('/get_token_old', auth=JWTAuth())
-def get_token(request):
-    # JWT_authentication = JWTBaseAuthentication()
-    """  headers = request
-    print(headers.user.is_authenticated()) """
-    # print("Yes**************************")
-    """ if headers.__contains__("Authorization"):
-        header = request.headers.get('Authorization')
-    else:
-        header = "there is no Authorization headers" """
-    """ for k, v in headers:
-        print(k, v) """
-    # print(request.META)
-    # return {'header': dict(header)}
-
-    meta = request.headers
-    for k, v in meta.items():
-         print(k, v)
-    
-    print(request.user.email)
-
-    # return {'header': dict(meta)}
-
-    # print(request.user.auth)
-
-    """     if request.user.is_authenticated():
-        print("Yes****************")
-        return {"is_authenticated": "Yes"}
-    else:
-        print('No **********************')
-        return {"is_authenticated": "No"} """
-
-
-api.register_controllers(NinjaJWTDefaultController)
-
-
-
-
-@api.get('/get_token')
-def get_token(request):
-    pass
-    # print(request.user.last_name)
-    #print(request.data)
